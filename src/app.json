@@ -1,0 +1,3 @@
+{"title":"License Seat Audit","brand":"SEAT AUDIT","theme":"glass","storageKey":"seatDemo","appJs":"/home/claude/repos2/license-seat-audit/src/app.js","desc":"Inactive software seat detection, staging, exemptions and savings",
+"nav":[["dashboard","🏠 Dashboard"],["seats","👥 Seats directory"],["audit","🔍 Run audit"],["staging","📦 Staging & removals"],["exemptions","🛡 Exemptions"],["savings","💰 Savings model"],["report","💬 Weekly report"],["activity","🔔 Activity"]],
+"sidebarExtra":"<div class=\"who\"><label>Signed in as (demo)</label><select id=\"me\" onchange=\"S.me=this.value;route()\"><option>Ops Admin</option><option>Team Lead</option><option>Viewer</option></select><p class=\"muted\" id=\"roleLbl\"></p></div>"}

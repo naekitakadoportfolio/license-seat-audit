@@ -1,7 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>License Seat Audit · Nae Kitakado</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
+<title>License Seat Audit · Demo</title><meta name="description" content="Inactive software seat detection, staging, exemptions and savings">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>
 :root{--bg1:#EAF4FA;--bg2:#D7EAF5;--ink:#14384E;--mauve:#4F6E80;--cocoa:#1D4C93;--sky:#89CDE7;--card:rgba(255,255,255,.62);--line:rgba(20,56,78,.14);--blush:rgba(137,205,231,.22);--rose:#89CDE7;--ok-bg:#DDF1E4;--ok:#1E5A36;--warn-bg:#FCEBC8;--warn:#7A4E12;--bad-bg:#F8D7DA;--bad:#8A2C3A}
 [data-theme=dark]{--bg1:#0B1E2A;--bg2:#14384E;--ink:#E6F2F8;--mauve:#9BB8C8;--card:rgba(20,56,78,.55);--line:rgba(137,205,231,.18);--blush:rgba(137,205,231,.12);--cocoa:#89CDE7;--ok-bg:rgba(46,160,90,.2);--ok:#8FE0AE;--warn-bg:rgba(230,160,40,.2);--warn:#F5C97A;--bad-bg:rgba(220,80,90,.2);--bad:#F5A3AC}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,'Segoe UI',system-ui,sans-serif;color:var(--ink);background:linear-gradient(160deg,var(--bg1),var(--bg2));background-attachment:fixed;min-height:100vh}
@@ -26,24 +25,98 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;p
 pre{background:#0B1E2A;color:#CFE8F4;border-radius:10px;padding:12px;font-size:12px;overflow:auto;max-height:320px}
 footer{text-align:center;font-size:12px;color:var(--mauve);margin-top:28px}a{color:var(--cocoa)}.muted{color:var(--mauve);font-size:13px}
 .hero:after{display:none}
-</style></head><body><div class="wrap"><div class="topbar"><span class="brand">OPERATIONS CONSOLE · DEMO</span><button class="ghost" id="themeBtn" style="margin:0;padding:6px 12px" onclick="(()=>{const h=document.documentElement,n=h.dataset.theme==='dark'?'light':'dark';h.dataset.theme=n;try{localStorage.setItem('demoTheme',n)}catch(e){};themeBtn.textContent=n==='dark'?'☀️ Light':'🌙 Dark'})()">🌙 Dark</button></div>
-<script>try{const s=localStorage.getItem('demoTheme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=s;addEventListener('DOMContentLoaded',()=>themeBtn.textContent=s==='dark'?'☀️ Light':'🌙 Dark')}catch(e){}</script>
-<div class="hero"><span class="tag">LIVE DEMO · FICTIONAL DATA</span><h1>License Seat Audit</h1><p>Finds unused software seats before renewal and reclaims them safely. Adjust the inactivity threshold, stage or exempt users, confirm removals and watch the savings and weekly report update.</p></div><div class="grid"><div class="card"><h2>1 · Audit rules</h2>
-<label>Flag as inactive after (days)</label><input id="d" type="range" min="14" max="120" value="45" oninput="dv.textContent=this.value;draw()"> <span id="dv" class="muted">45</span>
-<label>Seat price ($/month)</label><input id="p" type="number" value="29" oninput="draw()">
-<p class="muted">Lifecycle: Active → Flagged → Staged for removal → Removed. Exempt seats are protected.</p></div>
-<div class="card"><h2>2 · Savings</h2><div class="kpi" id="kpi"></div></div></div>
-<div class="card" style="margin-top:18px"><h2>Seats</h2><div id="t"></div></div>
-<div class="card" style="margin-top:18px"><h2>Weekly report preview (chat)</h2><pre id="slack"></pre></div>
+</style><style>
+.shell{display:grid;grid-template-columns:220px 1fr;gap:16px;margin-top:4px}@media(max-width:820px){.shell{grid-template-columns:1fr}}
+.side{background:var(--card);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:16px;padding:14px;height:fit-content;position:sticky;top:12px}
+.side a{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-radius:10px;color:var(--ink);text-decoration:none;font-weight:500;margin:2px 0}
+.side a.on{background:var(--cocoa);color:#fff}.side a:hover:not(.on){background:var(--blush)}
+.badge{background:#C0392B;color:#fff;border-radius:99px;font-size:11px;padding:1px 7px}
+.who{border-top:1px solid var(--line);margin-top:12px;padding-top:12px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.cal .h{font-size:11px;font-weight:700;color:var(--mauve);text-align:center;letter-spacing:.08em}
+.day{min-height:92px;border:1px solid var(--line);border-radius:10px;padding:6px;background:rgba(255,255,255,.35);cursor:pointer;font-size:12px;overflow:hidden}
+[data-theme=dark] .day{background:rgba(255,255,255,.04)}.day:hover{outline:2px solid var(--sky)}.day.off{opacity:.4}.day.we{background:var(--blush)}.day.today{outline:2px solid var(--cocoa)}.day.sel{background:rgba(29,76,147,.18)}
+.ev{border-radius:5px;padding:1px 5px;margin-top:3px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+.Vacation{background:#1D4C93}.Sick{background:#C27C0E}.Personal{background:#2E8B57}.Protected{background:#6B7A86}.Holiday{background:#89CDE7;color:#14384E}.pending{opacity:.6;border:1px dashed #fff}
+.toast{position:fixed;right:18px;bottom:18px;background:var(--cocoa);color:#fff;padding:12px 16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.2);opacity:0;transform:translateY(10px);transition:.25s;z-index:9;max-width:340px}.toast.show{opacity:1;transform:none}
+.modal{position:fixed;inset:0;background:rgba(10,30,45,.45);display:none;align-items:center;justify-content:center;z-index:8;padding:16px}.modal.show{display:flex}.modal .card{max-width:480px;width:100%;background:var(--bg1)}
+.row{display:flex;gap:10px}.row>*{flex:1}.legend span{margin-right:10px;font-size:12px}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:middle}
+.bar{background:var(--blush);border-radius:99px;height:8px;margin-top:4px}.bar div{height:8px;border-radius:99px;background:var(--cocoa)}
+</style><style></style></head><body><div class="wrap">
+<div class="topbar"><span class="brand">SEAT AUDIT · DEMO</span><span><button class="ghost" style="margin:0;padding:6px 12px" onclick="resetAll()">↺ Reset demo data</button> <button class="ghost" id="themeBtn" style="margin:0;padding:6px 12px" onclick="toggleTheme()">🌙 Dark</button></span></div>
+<div class="shell"><nav class="side"><a href="#/dashboard" data-r="dashboard">🏠 Dashboard <span class="badge" data-b="dashboard"></span></a>
+<a href="#/seats" data-r="seats">👥 Seats directory <span class="badge" data-b="seats"></span></a>
+<a href="#/audit" data-r="audit">🔍 Run audit <span class="badge" data-b="audit"></span></a>
+<a href="#/staging" data-r="staging">📦 Staging & removals <span class="badge" data-b="staging"></span></a>
+<a href="#/exemptions" data-r="exemptions">🛡 Exemptions <span class="badge" data-b="exemptions"></span></a>
+<a href="#/savings" data-r="savings">💰 Savings model <span class="badge" data-b="savings"></span></a>
+<a href="#/report" data-r="report">💬 Weekly report <span class="badge" data-b="report"></span></a>
+<a href="#/activity" data-r="activity">🔔 Activity <span class="badge" data-b="activity"></span></a><div class="who"><label>Signed in as (demo)</label><select id="me" onchange="S.me=this.value;route()"><option>Ops Admin</option><option>Team Lead</option><option>Viewer</option></select><p class="muted" id="roleLbl"></p></div></nav><main id="view"></main></div>
+<div class="modal" id="modal" onclick="if(event.target==this)closeM()"><div class="card" id="mbody"></div></div><div class="toast" id="toast"></div>
+<footer>Portfolio rebuild by <b>Nae Kitakado</b>, AI Automation Consultant · <a href="https://github.com/naekitakadoportfolio/license-seat-audit">Source</a> · <a href="https://www.linkedin.com/in/nae-k-203194265">LinkedIn</a><br>All data is fictional. Changes are saved in your browser only.</footer></div>
 <script>
-const $=i=>document.getElementById(i);
-let U=[["Ava Reyes","Ops","2026-11-04"],["Ben Cruz","Creative","2026-08-30"],["Cara Lim","Data","2026-09-10"],["Dan Ong","Sales","2026-06-02"],["Eli Tan","Creative","2026-11-01"],["Fay Go","Exec","2026-07-15"],["Gus Uy","Contractor","2026-05-20"],["Hana Sy","Ops","2026-10-29"]].map(([n,t,l])=>({n,t,l,st:"active",ex:n=="Fay Go"?"Exec, low usage by design":""}));
-const age=l=>Math.round((new Date("2026-11-05")-new Date(l))/864e5);
-function draw(){const lim=+$("d").value,p=+$("p").value;U.forEach(u=>{if(u.st=="removed"||u.st=="staged")return;u.st=!u.ex&&age(u.l)>lim?"flagged":"active"});
- const fl=U.filter(u=>u.st=="flagged").length,stg=U.filter(u=>u.st=="staged").length,rm=U.filter(u=>u.st=="removed").length;
- $("kpi").innerHTML=`<div><b>${U.length-rm}</b>paid seats</div><div><b>${fl+stg}</b>reclaimable</div><div><b>$${((fl+stg+rm)*p*12).toLocaleString()}</b>annual savings</div>`;
- $("t").innerHTML="<table><tr><th>User</th><th>Team</th><th>Last active</th><th>Status</th><th>Action</th></tr>"+U.map((u,i)=>`<tr><td>${u.n}</td><td>${u.t}</td><td>${age(u.l)}d ago</td><td><span class="pill ${u.st=='active'?'low':u.st=='removed'?'high':'medium'}">${u.ex?'exempt':u.st}</span>${u.ex?`<br><span class="muted">${u.ex}</span>`:''}</td><td>${u.st=='flagged'?`<button style="padding:5px 12px;margin:0" onclick="U[${i}].st='staged';draw()">Stage</button> <button class="ghost" style="padding:5px 12px;margin:0" onclick="U[${i}].ex=prompt('Exemption reason?')||'';draw()">Exempt</button>`:u.st=='staged'?`<button style="padding:5px 12px;margin:0" onclick="U[${i}].st='removed';draw()">Confirm removal</button> <button class="ghost" style="padding:5px 12px;margin:0" onclick="U[${i}].st='active';U[${i}].l='2026-11-05';draw()">Restore</button>`:''}</td></tr>`).join("")+"</table>";
- $("slack").textContent=`🪑 Seat Audit · week of Nov 5\n• Paid seats: ${U.length-rm}\n• Flagged inactive >${lim}d: ${fl}\n• Staged for removal: ${stg}\n• Removed this cycle: ${rm}\n• Exempt: ${U.filter(u=>u.ex).length}\n💰 Projected annual savings: $${((fl+stg+rm)*p*12).toLocaleString()}`}
-draw();
-</script>
-<footer>Built by <b>Nae Kitakado</b>, AI Automation Consultant · <a href="https://github.com/naekitakadoportfolio">GitHub</a> · <a href="https://www.linkedin.com/in/nae-k-203194265">LinkedIn</a> · <a href="https://sider.ai/agents/web-creator/share/695ea81100a621619985fdfb">Portfolio</a><br>All data is fictional. This demo runs entirely in your browser.</footer></div></body></html>
+const TODAY="2026-11-05",age=l=>Math.round((new Date(TODAY)-new Date(l))/864e5),money=n=>"$"+Math.round(n).toLocaleString();
+function SEED(){const N=[["Ava Reyes","Ops","Member","2026-11-04"],["Ben Cruz","Creative","Member","2026-08-30"],["Cara Lim","Data","Member","2026-09-10"],["Dan Ong","Sales","Member","2026-06-02"],["Eli Tan","Creative","Member","2026-11-01"],["Fay Go","Exec","Admin","2026-07-15"],["Gus Uy","Contractor","Guest","2026-05-20"],["Hana Sy","Ops","Admin","2026-10-29"],["Ian Roa","Creative","Member","2026-10-31"],["Jia Chua","Data","Member","2026-07-02"],["Ken Lao","Sales","Member","2026-09-25"],["Lia Paz","Creative","Member","2026-11-03"],["Mo Diaz","Contractor","Guest","2026-04-11"],["Nia Sol","Ops","Member","2026-10-20"],["Oli Yu","Creative","Member","2026-08-14"],["Pia Lee","Sales","Member","2026-11-02"],["Quin Ho","Data","Member","2026-09-01"],["Rae Tan","Creative","Member","2026-06-28"],["Sam Uy","Contractor","Guest","2026-10-30"],["Tess Go","Exec","Member","2026-10-12"]];
+ return{users:N.map(([n,team,role,last],i)=>({id:i+1,n,team,role,last,st:"active"})),ex:[{uid:6,why:"Exec, low usage by design",until:"2027-03-31",by:"Ops lead"}],
+ rules:{days:45,price:29,includeGuests:true},runs:[],reports:[],me:"Ops Admin",renewal:"2026-12-01",log:[{t:"Nov 1, 08:00",m:"📥 Pulled 20 members and last-active dates from the workspace API"}],q:"",tf:""}}
+const U=id=>S.users.find(u=>u.id==id),isEx=u=>S.ex.some(e=>e.uid==u.id&&e.until>=TODAY),paid=()=>S.users.filter(u=>u.st!="removed");
+const stp=u=>isEx(u)?'<span class="pill low">exempt</span>':{active:'<span class="pill low">active</span>',flagged:'<span class="pill medium">flagged</span>',staged:'<span class="pill high">staged</span>',removed:'<span class="pill high">removed</span>'}[u.st];
+const canEdit=()=>S.me!="Viewer";
+const V={};
+V.dashboard=()=>{const fl=S.users.filter(u=>u.st=="flagged").length,st=S.users.filter(u=>u.st=="staged").length,rm=S.users.filter(u=>u.st=="removed").length,days=Math.round((new Date(S.renewal)-new Date(TODAY))/864e5);
+ return`<div class="hero"><span class="tag">RENEWAL IN ${days} DAYS</span><h1>Seat audit</h1><p>Find unused paid seats before ${S.renewal}, stage them for removal, and protect the ones that need to stay.</p></div>
+ <div class="card" style="margin-top:16px"><div class="kpi"><div><b>${paid().length}</b>paid seats</div><div><b>${fl}</b>flagged inactive</div><div><b>${st}</b>staged for removal</div><div><b>${rm}</b>removed</div><div><b>${money((fl+st+rm)*S.rules.price*12)}</b>annual savings potential</div></div></div>
+ <div class="grid"><div class="card"><h2>Next steps</h2><ol><li>Run an audit with your inactivity threshold</li><li>Review flagged seats and stage or exempt them</li><li>Approve removals before the renewal date</li><li>Send the weekly report</li></ol><button onclick="go('audit')">Run audit</button> <button class="ghost" onclick="go('staging')">Review staging</button></div>
+ <div class="card"><h2>Inactive by team</h2><table>${[...new Set(S.users.map(u=>u.team))].map(t=>{const all=S.users.filter(u=>u.team==t),ina=all.filter(u=>age(u.last)>S.rules.days&&!isEx(u));return`<tr><td>${t}</td><td>${ina.length}/${all.length}</td><td style="width:45%"><div class="bar"><div style="width:${ina.length/all.length*100}%"></div></div></td></tr>`}).join("")}</table></div></div>`};
+V.seats=()=>{const q=S.q.toLowerCase();const us=S.users.filter(u=>(!q||u.n.toLowerCase().includes(q))&&(!S.tf||u.team==S.tf));
+ return`<div class="card"><h2>Seats directory</h2><div class="row"><input placeholder="Search name" value="${esc(S.q)}" oninput="S.q=this.value;clearTimeout(window._q);window._q=setTimeout(route,250)"><select onchange="S.tf=this.value;route()"><option value="">All teams</option>${[...new Set(S.users.map(u=>u.team))].map(t=>`<option ${t==S.tf?"selected":""}>${t}</option>`).join("")}</select></div>
+ <table style="margin-top:10px"><tr><th>Name</th><th>Team</th><th>Role</th><th>Last active</th><th>Status</th></tr>${us.map(u=>`<tr><td><a href="javascript:seatM(${u.id})">${u.n}</a></td><td>${u.team}</td><td>${u.role}</td><td>${age(u.last)}d ago</td><td>${stp(u)}</td></tr>`).join("")}</table></div>`};
+function seatM(id){const u=U(id),e=S.ex.find(x=>x.uid==id);openM(`<h2>${u.n}</h2><table><tr><th>Team</th><td>${u.team}</td></tr><tr><th>Role</th><td>${u.role}</td></tr><tr><th>Last active</th><td>${u.last} (${age(u.last)} days)</td></tr><tr><th>Status</th><td>${stp(u)}</td></tr>${e?`<tr><th>Exemption</th><td>${esc(e.why)} · until ${e.until}</td></tr>`:""}</table>
+ ${canEdit()?`<button onclick="U(${id}).last='${TODAY}';U(${id}).st='active';L('✅ ${u.n} marked active (confirmed in use)');closeM();route()">Mark as active</button> <button class="ghost" onclick="closeM();exM(${id})">Exempt</button>`:""} <button class="ghost" onclick="closeM()">Close</button>`)}
+V.audit=()=>`<div class="grid"><div class="card"><h2>Run an audit</h2><label>Flag seats inactive for more than (days)</label><input type="range" min="14" max="120" value="${S.rules.days}" oninput="S.rules.days=+this.value;$('dv').textContent=this.value"> <span id="dv" class="muted">${S.rules.days}</span>
+ <label>Seat price ($/month)</label><input type="number" id="pr" value="${S.rules.price}"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" style="width:auto" ${S.rules.includeGuests?"checked":""} onchange="S.rules.includeGuests=this.checked"> Include guest / contractor seats</label>
+ <button onclick="runAudit()" ${canEdit()?"":"disabled"}>Run audit now</button>${canEdit()?"":"<p class='muted'>Viewers can't run audits.</p>"}</div>
+ <div class="card"><h2>Audit history</h2>${S.runs.length?`<table><tr><th>When</th><th>Threshold</th><th>Flagged</th><th>By</th></tr>${S.runs.map(r=>`<tr><td>${r.t}</td><td>${r.d}d</td><td>${r.n}</td><td>${r.by}</td></tr>`).join("")}</table>`:"<p class='muted'>No audits run yet.</p>"}</div></div>`;
+function runAudit(){const p=+$("pr").value;if(!(p>0))return toast("Seat price must be greater than 0");S.rules.price=p;let n=0;
+ S.users.forEach(u=>{if(u.st=="staged"||u.st=="removed")return;const inc=S.rules.includeGuests||u.role!="Guest";u.st=inc&&!isEx(u)&&age(u.last)>S.rules.days?(n++,"flagged"):"active"});
+ S.runs.unshift({t:new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}),d:S.rules.days,n,by:S.me});L(`🔍 Audit run (> ${S.rules.days}d inactive): ${n} seats flagged`);toast(`${n} seats flagged`);go("staging")}
+V.staging=()=>{const fl=S.users.filter(u=>u.st=="flagged"),st=S.users.filter(u=>u.st=="staged"),rm=S.users.filter(u=>u.st=="removed");
+ const row=(u,btns)=>`<tr><td>${u.n}</td><td>${u.team}</td><td>${age(u.last)}d</td><td>${stp(u)}</td><td>${canEdit()?btns:""}</td></tr>`;
+ return`<div class="card"><h2>1 · Flagged (${fl.length})</h2>${fl.length?`<table>${fl.map(u=>row(u,`<button style="margin:0;padding:5px 10px" onclick="mvU(${u.id},'staged')">Stage</button> <button class="ghost" style="margin:0;padding:5px 10px" onclick="exM(${u.id})">Exempt</button>`)).join("")}</table>${canEdit()?`<button class="ghost" onclick="S.users.filter(u=>u.st=='flagged').forEach(u=>u.st='staged');L('📦 Staged all flagged seats');route()">Stage all</button>`:""}`:"<p class='muted'>Nothing flagged. Run an audit first.</p>"}</div>
+ <div class="card" style="margin-top:16px"><h2>2 · Staged for removal (${st.length})</h2><p class="muted">Owners get a 7-day notice. Removing a seat needs Admin approval.</p>${st.length?`<table>${st.map(u=>row(u,`<button style="margin:0;padding:5px 10px" onclick="rmU(${u.id})">Approve removal</button> <button class="ghost" style="margin:0;padding:5px 10px" onclick="mvU(${u.id},'active')">Restore</button>`)).join("")}</table>`:"<p class='muted'>None staged.</p>"}</div>
+ <div class="card" style="margin-top:16px"><h2>3 · Removed (${rm.length})</h2>${rm.length?`<table>${rm.map(u=>row(u,`<button class="ghost" style="margin:0;padding:5px 10px" onclick="U(${u.id}).last='${TODAY}';mvU(${u.id},'active')">Re-invite</button>`)).join("")}</table>`:"<p class='muted'>None removed yet.</p>"}</div>`};
+function mvU(id,st){U(id).st=st;L(`${st=="staged"?"📦 Staged":"↩️ Restored"} ${U(id).n}`);route()}
+function rmU(id){if(S.me!="Ops Admin")return toast("Only an Admin can approve removals");U(id).st="removed";L(`🗑 Removed ${U(id).n} · seat released · owner emailed`);toast("Seat removed");route()}
+function exM(id){const u=U(id);openM(`<h2>Exempt ${u.n}</h2><label>Reason (required)</label><input id="ew" placeholder="e.g. Seasonal contractor, returns in Q1"><label>Exempt until</label><input type="date" id="eu" value="2027-03-31"><button onclick="addEx(${id})">Save exemption</button> <button class="ghost" onclick="closeM()">Cancel</button>`)}
+function addEx(id){const w=$("ew").value.trim(),until=$("eu").value;if(w.length<5)return toast("Give a reason of at least 5 characters");if(until<=TODAY)return toast("Expiry must be in the future");S.ex=S.ex.filter(e=>e.uid!=id);S.ex.push({uid:id,why:w,until,by:S.me});U(id).st="active";L(`🛡 Exempted ${U(id).n}: ${w}`);closeM();toast("Exemption saved");route()}
+V.exemptions=()=>`<div class="card"><h2>Exemptions (${S.ex.length})</h2><p class="muted">Exempt seats are never flagged. Each needs a reason and expires, so nothing stays protected forever.</p>${S.ex.length?`<table><tr><th>User</th><th>Reason</th><th>Until</th><th>By</th><th>Status</th><th></th></tr>${S.ex.map((e,i)=>`<tr><td>${U(e.uid).n}</td><td>${esc(e.why)}</td><td>${e.until}</td><td>${esc(e.by)}</td><td>${e.until>=TODAY?'<span class="pill low">active</span>':'<span class="pill high">expired</span>'}</td><td>${canEdit()?`<button class="ghost" style="margin:0;padding:5px 10px" onclick="L('🛡 Exemption removed for '+U(S.ex[${i}].uid).n);S.ex.splice(${i},1);route()">Remove</button>`:""}</td></tr>`).join("")}</table>`:"<p class='muted'>No exemptions.</p>"}
+ ${canEdit()?`<label>Add exemption for</label><div class="row"><select id="exu">${S.users.filter(u=>!isEx(u)).map(u=>`<option value="${u.id}">${u.n}</option>`).join("")}</select><button style="margin:0" onclick="exM(+$('exu').value)">Add</button></div>`:""}</div>`;
+V.savings=()=>{const p=S.rules.price,cur=paid().length,rec=S.users.filter(u=>["flagged","staged"].includes(u.st)).length,rm=S.users.filter(u=>u.st=="removed").length;
+ const sc=[["Do nothing",cur+rm],["Remove removed only",cur],["Remove flagged + staged",cur-rec]];
+ return`<div class="card"><h2>Renewal savings model</h2><label>Seat price ($/month)</label><input type="number" value="${p}" onchange="if(+this.value>0){S.rules.price=+this.value;route()}else toast('Price must be positive')">
+ <table style="margin-top:12px"><tr><th>Scenario</th><th>Seats at renewal</th><th>Annual cost</th><th>Savings</th></tr>${sc.map(([n,s])=>`<tr><td>${n}</td><td>${s}</td><td>${money(s*p*12)}</td><td>${s<sc[0][1]?`<span class="pill low">${money((sc[0][1]-s)*p*12)}</span>`:"—"}</td></tr>`).join("")}</table></div>`};
+function reportText(){const fl=S.users.filter(u=>u.st=="flagged").length,st=S.users.filter(u=>u.st=="staged").length,rm=S.users.filter(u=>u.st=="removed").length;
+ return`🪑 Seat Audit · week of Nov 5\n• Paid seats: ${paid().length}\n• Flagged inactive >${S.rules.days}d: ${fl}\n• Staged for removal: ${st}\n• Removed this cycle: ${rm}\n• Active exemptions: ${S.ex.filter(e=>e.until>=TODAY).length}\n💰 Projected annual savings: ${money((fl+st+rm)*S.rules.price*12)}\n📅 Renewal: ${S.renewal}`}
+V.report=()=>`<div class="grid"><div class="card"><h2>Weekly report preview</h2><pre>${esc(reportText())}</pre><label>Channel</label><select id="ch"><option>#ops-leadership</option><option>#finance</option><option>#it-admin</option></select><button onclick="S.reports.unshift({t:new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}),ch:$('ch').value});L('💬 Weekly report sent to '+$('ch').value);toast('Report sent');route()" ${canEdit()?"":"disabled"}>Send report</button></div>
+ <div class="card"><h2>Send log</h2>${S.reports.length?S.reports.map(r=>`<div style="padding:5px 0;border-bottom:1px solid var(--line)">${r.t} · ${r.ch}</div>`).join(""):"<p class='muted'>Not sent yet. In production this runs every Monday at 08:00.</p>"}</div></div>`;
+V.activity=()=>`<div class="card"><h2>Activity</h2>${S.log.map(l=>`<div style="padding:6px 0;border-bottom:1px solid var(--line)"><span class="muted">${l.t}</span> · ${l.m}</div>`).join("")}</div>`;
+function badge(r){if(r=="staging"){const n=S.users.filter(u=>["flagged","staged"].includes(u.st)).length;return n||""}return""}
+function onRoute(){$("me").value=S.me;$("roleLbl").textContent=S.me=="Viewer"?"Read-only":S.me=="Ops Admin"?"Can approve removals":"Can stage & exempt"}
+
+
+const $=i=>document.getElementById(i);const esc=s=>String(s??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const KEY="seatDemo";let S;try{S=JSON.parse(localStorage.getItem(KEY))||SEED()}catch(e){S=SEED()}if(!S.log)S.log=[];
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function toast(m){const t=$("toast");t.innerHTML=m;t.classList.add("show");clearTimeout(t._);t._=setTimeout(()=>t.classList.remove("show"),3000)}
+function L(m){S.log.unshift({t:new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}),m});if(S.log.length>200)S.log.length=200}
+function openM(h){$("mbody").innerHTML=h;$("modal").classList.add("show")}function closeM(){$("modal").classList.remove("show")}
+function go(r){location.hash="#/"+r}
+function route(){const r=(location.hash.replace("#/","").split("?")[0]||Object.keys(V)[0]);document.querySelectorAll(".side a").forEach(a=>a.classList.toggle("on",a.dataset.r==r));
+ try{$("view").innerHTML=(V[r]||V[Object.keys(V)[0]])()}catch(e){console.error(e);$("view").innerHTML='<div class="card"><h2>Something went wrong</h2><p class="muted">'+esc(e.message)+'</p></div>'}
+ document.querySelectorAll("[data-b]").forEach(b=>{const v=typeof badge=="function"?badge(b.dataset.b):"";b.textContent=v||"";b.style.display=v?"":"none"});
+ if(typeof onRoute=="function")onRoute(r);save()}
+function resetAll(){S=SEED();S.log=S.log||[];save();toast("Demo data reset");route()}
+function toggleTheme(){const h=document.documentElement,n=h.dataset.theme=="dark"?"light":"dark";h.dataset.theme=n;try{localStorage.setItem("demoTheme",n)}catch(e){}$("themeBtn").textContent=n=="dark"?"☀️ Light":"🌙 Dark"}
+try{const t=localStorage.getItem("demoTheme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=t;$("themeBtn").textContent=t=="dark"?"☀️ Light":"🌙 Dark"}catch(e){}
+addEventListener("hashchange",route);addEventListener("keydown",e=>{if(e.key=="Escape")closeM()});route();
+
+</script></body></html>
